@@ -1,21 +1,22 @@
 import { expect, test } from "@playwright/test";
-import { LoginPage } from "../../pages/LoginPage";
 import { InventoryPage } from "../../pages/InventoryPage";
+import { STANDARD_USER_STATE } from "../setup/auth-state";
 
-test.describe("Product list", () => {
+// Starts already logged in (session saved once by tests/setup/auth.setup.ts).
+test.use({ storageState: STANDARD_USER_STATE });
+
+test.describe("Product list", { tag: "@regression" }, () => {
   let inventory: InventoryPage;
 
   test.beforeEach(async ({ page }) => {
-    const login = new LoginPage(page);
-    await login.open();
-    await login.login("standard_user");
+    await page.goto("/inventory.html");
     inventory = new InventoryPage(page);
     // An empty list would make the sort checks pass on nothing, so wait for it first.
     await expect(inventory.items).toHaveCount(6);
   });
 
-  test("shows all 6 products with a name and a price", async () => {
-    await expect(inventory.items).toHaveCount(6);
+  test("shows all 6 products with a name and a price", { tag: "@smoke" }, async () => {
+    await expect(inventory.itemNames).toHaveCount(6);
     for (const price of await inventory.prices()) {
       expect(price).toBeGreaterThan(0);
     }
@@ -39,7 +40,7 @@ test.describe("Product list", () => {
     expect(names).toEqual([...names].sort().reverse());
   });
 
-  test("cart badge follows add and remove", async () => {
+  test("cart badge follows add and remove", { tag: "@smoke" }, async () => {
     await expect(inventory.cartBadge).toHaveCount(0);
     await inventory.addToCart("Sauce Labs Backpack");
     await inventory.addToCart("Sauce Labs Bike Light");

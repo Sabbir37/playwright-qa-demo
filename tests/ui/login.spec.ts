@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { LoginPage } from "../../pages/LoginPage";
 import { InventoryPage } from "../../pages/InventoryPage";
 
-test.describe("Login", () => {
+test.describe("Login", { tag: "@regression" }, () => {
   let login: LoginPage;
 
   test.beforeEach(async ({ page }) => {
@@ -10,7 +10,7 @@ test.describe("Login", () => {
     await login.open();
   });
 
-  test("standard user can log in and sees the product list", async ({ page }) => {
+  test("standard user can log in and sees the product list", { tag: "@smoke" }, async ({ page }) => {
     await login.login("standard_user");
     await expect(page).toHaveURL(/inventory\.html/);
     await expect(new InventoryPage(page).title).toHaveText("Products");

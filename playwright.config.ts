@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const SAUCEDEMO = "https://www.saucedemo.com";
+
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: true,
@@ -12,14 +14,22 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "setup",
+      testDir: "./tests/setup",
+      testMatch: /.*\.setup\.ts/,
+      use: { baseURL: SAUCEDEMO },
+    },
+    {
       name: "chromium",
       testDir: "./tests/ui",
-      use: { ...devices["Desktop Chrome"], baseURL: "https://www.saucedemo.com" },
+      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"], baseURL: SAUCEDEMO },
     },
     {
       name: "mobile-safari",
       testDir: "./tests/ui",
-      use: { ...devices["iPhone 15"], baseURL: "https://www.saucedemo.com" },
+      dependencies: ["setup"],
+      use: { ...devices["iPhone 15"], baseURL: SAUCEDEMO },
     },
     {
       name: "api",

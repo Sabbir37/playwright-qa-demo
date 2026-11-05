@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { LoginPage } from "../../pages/LoginPage";
 import { InventoryPage } from "../../pages/InventoryPage";
 import { CheckoutPage } from "../../pages/CheckoutPage";
@@ -9,7 +9,7 @@ import { CheckoutPage } from "../../pages/CheckoutPage";
  * expected failure: the suite stays green, and the moment a bug is fixed the test
  * "unexpectedly passes" and tells us to close the bug. Details: BUGS.md.
  */
-async function loginAs(page: import("@playwright/test").Page, user: string) {
+async function loginAs(page: Page, user: string) {
   const login = new LoginPage(page);
   await login.open();
   await login.login(user);
@@ -19,10 +19,16 @@ async function loginAs(page: import("@playwright/test").Page, user: string) {
   return inventory;
 }
 
-test.describe("Known bugs (problem_user / error_user)", () => {
+/** `npm run screenshots` sets CAPTURE=1 to refresh the evidence images in docs/bugs/. */
+async function evidence(page: Page, id: string) {
+  if (process.env.CAPTURE) await page.screenshot({ path: `docs/bugs/${id}.png` });
+}
+
+test.describe("Known bugs (problem_user / error_user)", { tag: "@known-bug" }, () => {
   test("BUG-01: every product shows its own image", async ({ page }) => {
     test.fail(true, "BUG-01: problem_user sees the same image on every product");
     const inventory = await loginAs(page, "problem_user");
+    await evidence(page, "BUG-01");
     const sources = await inventory.items.locator("img").evaluateAll((imgs) =>
       imgs.map((img) => (img as HTMLImageElement).src),
     );
@@ -33,6 +39,7 @@ test.describe("Known bugs (problem_user / error_user)", () => {
     test.fail(true, "BUG-02: problem_user's sort dropdown does not re-order products");
     const inventory = await loginAs(page, "problem_user");
     await inventory.sortBy("Price (low to high)");
+    await evidence(page, "BUG-02");
     const prices = await inventory.prices();
     expect(prices).toEqual([...prices].sort((a, b) => a - b));
   });
@@ -42,11 +49,12 @@ test.describe("Known bugs (problem_user / error_user)", () => {
     const inventory = await loginAs(page, "problem_user");
     const names = await inventory.itemNames.allTextContents();
     for (const name of names) await inventory.addToCart(name);
+    await evidence(page, "BUG-03");
     await expect(inventory.cartBadge).toHaveText(String(names.length), { timeout: 2000 });
   });
 
   test("BUG-04: Last Name field keeps what the user types", async ({ page }) => {
-    test.fail(true, "BUG-04: Last Name stays empty after typing for problem_user");
+    test.fail(true, "BUG-04: for problem_user, typing in Last Name overwrites First Name");
     const inventory = await loginAs(page, "problem_user");
     const checkout = new CheckoutPage(page);
     await inventory.addToCart("Sauce Labs Backpack");
@@ -54,6 +62,7 @@ test.describe("Known bugs (problem_user / error_user)", () => {
     await checkout.checkoutButton.click();
     await checkout.firstName.fill("Sabbir");
     await checkout.lastName.fill("Hossain");
+    await evidence(page, "BUG-04");
     await expect(checkout.lastName).toHaveValue("Hossain", { timeout: 2000 });
   });
 
@@ -66,6 +75,8 @@ test.describe("Known bugs (problem_user / error_user)", () => {
     await checkout.checkoutButton.click();
     await checkout.fillInfo("Sabbir", "Hossain", "3100");
     await checkout.finishButton.click();
+    await page.waitForTimeout(1500); // give the page time to (not) move on before the evidence shot
+    await evidence(page, "BUG-05");
     await expect(checkout.completeHeader).toHaveText("Thank you for your order!", { timeout: 3000 });
   });
 });

@@ -12,7 +12,7 @@ const booking = {
 
 test.describe.configure({ mode: "serial" });
 
-test.describe("Booking API: create, read, update, delete", () => {
+test.describe("Booking API: create, read, update, delete", { tag: "@regression" }, () => {
   let token: string;
   let id: number;
 
@@ -29,7 +29,7 @@ test.describe("Booking API: create, read, update, delete", () => {
     expect(await res.json()).toEqual({ reason: "Bad credentials" });
   });
 
-  test("POST /booking creates a booking and echoes it back", async ({ request }) => {
+  test("POST /booking creates a booking and echoes it back", { tag: "@smoke" }, async ({ request }) => {
     const res = await request.post("/booking", { data: booking });
     expect(res.status()).toBe(200);
     const body = await res.json();
@@ -38,7 +38,7 @@ test.describe("Booking API: create, read, update, delete", () => {
     id = body.bookingid;
   });
 
-  test("GET /booking/:id returns the saved booking", async ({ request }) => {
+  test("GET /booking/:id returns the saved booking", { tag: "@smoke" }, async ({ request }) => {
     const res = await request.get(`/booking/${id}`);
     expect(res.status()).toBe(200);
     expect(await res.json()).toEqual(booking);
